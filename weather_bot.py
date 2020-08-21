@@ -4,13 +4,21 @@ import telebot
 import config
 import random
 
+
 #TelegramBot
 bot = telebot.TeleBot(config.token)
 
-params = dict(q='Kyiv,ua',APPID=config.API_KEY)
 
+#Weather
+params = dict(q='Kyiv,ua',APPID=config.API_KEY)
 res = requests.get(config.url, params=params)
 json = res.json()
+
+
+#Air 
+air_res = requests.get(config.air_url + config.AIR_KEY)
+air_json = air_res.json()
+
 
 @bot.message_handler(commands=['wind'])
 def mess(message):
@@ -22,7 +30,7 @@ def mess(message):
 @bot.message_handler(commands=['start'])
 def start_message(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('wind', 'temp')
+    keyboard.row('wind', 'temp', 'air')
     keyboard.row('oracle')
     bot.send_message(message.chat.id, 'Привет!', reply_markup=keyboard)
 
@@ -33,8 +41,11 @@ def handle_text(message):
         send_mess = "Ветер " + str(json["wind"]["speed"]) + "м.с. Угол " + str(json["wind"]["deg"])
     elif message.text == 'temp':
         send_mess = "Температура " + str(int(json["main"]["temp"]) - 273)
+    elif message.text == 'air':
+        send_mess = "Качество воздуха " + str(int(air_json["data"]["aqi"]))
     elif message.text == 'oracle':
         send_mess = random.choice(open("/home/ros/bot/oracle").readlines())
     bot.send_message(message.chat.id, send_mess, parse_mode='html')
+
 
 bot.polling(none_stop=True)
